@@ -1,0 +1,79 @@
+{
+  "name": "Replay - Personal Music Player",
+  "short_name": "Replay",
+  "description": "A reactive progressive web app for musicians to listen to their Dropbox audio tracks with smart features",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#030213",
+  "orientation": "any",
+  "categories": ["music", "entertainment", "productivity"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23030213'%3E%3Cpath d='M8 5v14l11-7z'/%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23030213'%3E%3Cpath d='M8 5v14l11-7z'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white' style='background: %23030213; border-radius: 4px; padding: 4px;'%3E%3Cpath d='M8 5v14l11-7z'/%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "lang": "en",
+  "scope": "/",
+  "prefer_related_applications": false,
+  "screenshots": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='390' height='844' viewBox='0 0 390 844' fill='%23f9fafb'%3E%3Crect width='390' height='844' fill='%23f9fafb'/%3E%3Crect x='20' y='100' width='350' height='200' rx='8' fill='white' stroke='%23e5e7eb'/%3E%3Ctext x='40' y='140' font-family='Arial' font-size='18' font-weight='bold' fill='%23030213'%3EReplay%3C/text%3E%3Ctext x='40' y='165' font-family='Arial' font-size='14' fill='%23717182'%3ENow Playing%3C/text%3E%3C/svg%3E",
+      "sizes": "390x844",
+      "type": "image/svg+xml",
+      "form_factor": "narrow",
+      "label": "Replay mobile view"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800' viewBox='0 0 1200 800' fill='%23f9fafb'%3E%3Crect width='1200' height='800' fill='%23f9fafb'/%3E%3Crect x='50' y='100' width='500' height='300' rx='8' fill='white' stroke='%23e5e7eb'/%3E%3Ctext x='70' y='140' font-family='Arial' font-size='24' font-weight='bold' fill='%23030213'%3EReplay%3C/text%3E%3Ctext x='70' y='170' font-family='Arial' font-size='16' fill='%23717182'%3EYour personal audio collection%3C/text%3E%3C/svg%3E",
+      "sizes": "1200x800",
+      "type": "image/svg+xml",
+      "form_factor": "wide",
+      "label": "Replay desktop view"
+    }
+  ],
+  "related_applications": [],
+  "shortcuts": [
+    {
+      "name": "Recently Played",
+      "short_name": "Recent",
+      "description": "View your recently played tracks",
+      "url": "/?tab=recent",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23030213'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z'/%3E%3C/svg%3E",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Search Music",
+      "short_name": "Search",
+      "description": "Search your music collection",
+      "url": "/?tab=tracks&search=true",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23030213'%3E%3Cpath d='M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z'/%3E%3C/svg%3E",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ]
+}

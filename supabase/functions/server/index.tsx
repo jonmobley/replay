@@ -1,0 +1,287 @@
+import { Hono } from 'npm:hono'
+import { cors } from 'npm:hono/cors'
+import { logger } from 'npm:hono/logger'
+import { createClient } from 'npm:@supabase/supabase-js'
+import * as kv from './kv_store.tsx'
+
+const app = new Hono()
+
+app.use('*', cors({
+  origin: '*',
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization'],
+}))
+
+app.use('*', logger(console.log))
+
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL') || '',
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+)
+
+// Helper function to extract metadata from filename
+function extractMetadataFromFilename(filename: string) {
+  // Remove file extension
+  const nameWithoutExt = filename.replace(/\.[^/.]+$/, '')
+  
+  // Common patterns for music files:
+  // "Artist - Track.mp3"
+  // "Artist - Album - Track.mp3"
+  // "Track.mp3"
+  // "01 - Track.mp3"
+  // "01. Track.mp3"
+  
+  let artist = 'Unknown Artist'
+  let album = 'Unknown Album'
+  let title = nameWithoutExt
+  
+  // Pattern: "Artist - Track" or "Artist - Album - Track"
+  if (nameWithoutExt.includes(' - ')) {
+    const parts = nameWithoutExt.split(' - ')
+    if (parts.length === 2) {
+      artist = parts[0].trim()
+      title = parts[1].trim()
+    } else if (parts.length === 3) {
+      artist = parts[0].trim()
+      album = parts[1].trim()
+      title = parts[2].trim()
+    }
+  }
+  
+  // Remove track numbers from title
+  title = title.replace(/^\d+\.?\s*/, '')
+  
+  return { artist, album, title }
+}
+
+// Helper function to get file extension
+function getFileExtension(filename: string): string {
+  return filename.split('.').pop()?.toLowerCase() || ''
+}
+
+// Fetch audio files from Dropbox
+app.get('/make-server-a401fe33/dropbox/files', async (c) => {
+  try {
+    const accessToken = Deno.env.get('DROPBOX_ACCESS_TOKEN')
+    if (!accessToken) {
+      console.log('Dropbox access token not found')
+      return c.json({ error: 'Dropbox access token not configured' }, 500)
+    }
+
+    const response = await fetch('https://api.dropboxapi.com/2/files/list_folder', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        path: '',
+        recursive: true,
+        include_media_info: true,
+        include_deleted: false,
+        include_has_explicit_shared_members: false,
+      }),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.log('Dropbox API error:', errorText)
+      return c.json({ error: 'Failed to fetch files from Dropbox' }, response.status)
+    }
+
+    const data = await response.json()
+    
+    // Filter for audio files and extract metadata
+    const audioFiles = data.entries
+      .filter((file: any) => 
+        file['.tag'] === 'file' && 
+        (file.name.toLowerCase().endsWith('.mp3') || 
+         file.name.toLowerCase().endsWith('.wav') || 
+         file.name.toLowerCase().endsWith('.m4a') ||
+         file.name.toLowerCase().endsWith('.ogg') ||
+         file.name.toLowerCase().endsWith('.flac'))
+      )
+      .map((file: any) => {
+        const metadata = extractMetadataFromFilename(file.name)
+        const fileType = getFileExtension(file.name)
+        
+        // Try to get duration from media_info if available
+        let duration = null
+        if (file.media_info && file.media_info.metadata) {
+          const mediaMetadata = file.media_info.metadata
+          if (mediaMetadata.duration) {
+            duration = Math.round(mediaMetadata.duration / 1000) // Convert ms to seconds
+          }
+        }
+        
+        return {
+          id: file.id,
+          name: file.name,
+          path_lower: file.path_lower,
+          size: file.size,
+          fileType,
+          artist: metadata.artist,
+          album: metadata.album,
+          title: metadata.title,
+          duration,
+          client_modified: file.client_modified,
+          server_modified: file.server_modified
+        }
+      })
+
+    return c.json({ files: audioFiles })
+  } catch (error) {
+    console.log('Error fetching Dropbox files:', error)
+    return c.json({ error: 'Internal server error while fetching files' }, 500)
+  }
+})
+
+// Get temporary link for audio file
+app.post('/make-server-a401fe33/dropbox/temp-link', async (c) => {
+  try {
+    const { path } = await c.req.json()
+    const accessToken = Deno.env.get('DROPBOX_ACCESS_TOKEN')
+    
+    if (!accessToken) {
+      console.log('Dropbox access token not found for temp link')
+      return c.json({ error: 'Dropbox access token not configured' }, 500)
+    }
+
+    const response = await fetch('https://api.dropboxapi.com/2/files/get_temporary_link', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ path }),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.log('Dropbox temp link error:', errorText)
+      return c.json({ error: 'Failed to get temporary link' }, response.status)
+    }
+
+    const data = await response.json()
+    return c.json({ link: data.link })
+  } catch (error) {
+    console.log('Error getting temporary link:', error)
+    return c.json({ error: 'Internal server error while getting temporary link' }, 500)
+  }
+})
+
+// Recently played tracks
+app.get('/make-server-a401fe33/recently-played', async (c) => {
+  try {
+    const recentlyPlayed = await kv.get('recently_played') || []
+    // Sort by last played time (most recent first)
+    const sorted = recentlyPlayed.sort((a: any, b: any) => 
+      new Date(b.lastPlayed).getTime() - new Date(a.lastPlayed).getTime()
+    )
+    return c.json({ recentlyPlayed: sorted })
+  } catch (error) {
+    console.log('Error fetching recently played:', error)
+    return c.json({ error: 'Failed to fetch recently played tracks' }, 500)
+  }
+})
+
+app.post('/make-server-a401fe33/recently-played', async (c) => {
+  try {
+    const { track } = await c.req.json()
+    const recentlyPlayed = await kv.get('recently_played') || []
+    
+    // Find existing entry for this track
+    const existingIndex = recentlyPlayed.findIndex((item: any) => item.track.id === track.id)
+    
+    const now = new Date().toISOString()
+    
+    if (existingIndex !== -1) {
+      // Update existing entry
+      recentlyPlayed[existingIndex] = {
+        ...recentlyPlayed[existingIndex],
+        lastPlayed: now,
+        playCount: (recentlyPlayed[existingIndex].playCount || 1) + 1
+      }
+    } else {
+      // Add new entry
+      recentlyPlayed.push({
+        track,
+        firstPlayed: now,
+        lastPlayed: now,
+        playCount: 1
+      })
+    }
+    
+    // Keep only the most recent 100 tracks
+    const limitedRecentlyPlayed = recentlyPlayed
+      .sort((a: any, b: any) => new Date(b.lastPlayed).getTime() - new Date(a.lastPlayed).getTime())
+      .slice(0, 100)
+    
+    await kv.set('recently_played', limitedRecentlyPlayed)
+    
+    return c.json({ success: true })
+  } catch (error) {
+    console.log('Error adding to recently played:', error)
+    return c.json({ error: 'Failed to add track to recently played' }, 500)
+  }
+})
+
+app.delete('/make-server-a401fe33/recently-played', async (c) => {
+  try {
+    await kv.set('recently_played', [])
+    return c.json({ success: true })
+  } catch (error) {
+    console.log('Error clearing recently played:', error)
+    return c.json({ error: 'Failed to clear recently played' }, 500)
+  }
+})
+
+// Save/get playlists
+app.get('/make-server-a401fe33/playlists', async (c) => {
+  try {
+    const playlists = await kv.get('playlists') || []
+    return c.json({ playlists })
+  } catch (error) {
+    console.log('Error fetching playlists:', error)
+    return c.json({ error: 'Failed to fetch playlists' }, 500)
+  }
+})
+
+app.post('/make-server-a401fe33/playlists', async (c) => {
+  try {
+    const { name, tracks } = await c.req.json()
+    const playlists = await kv.get('playlists') || []
+    
+    const newPlaylist = {
+      id: Date.now().toString(),
+      name,
+      tracks,
+      createdAt: new Date().toISOString()
+    }
+    
+    playlists.push(newPlaylist)
+    await kv.set('playlists', playlists)
+    
+    return c.json({ playlist: newPlaylist })
+  } catch (error) {
+    console.log('Error creating playlist:', error)
+    return c.json({ error: 'Failed to create playlist' }, 500)
+  }
+})
+
+app.delete('/make-server-a401fe33/playlists/:id', async (c) => {
+  try {
+    const id = c.req.param('id')
+    const playlists = await kv.get('playlists') || []
+    
+    const updatedPlaylists = playlists.filter((p: any) => p.id !== id)
+    await kv.set('playlists', updatedPlaylists)
+    
+    return c.json({ success: true })
+  } catch (error) {
+    console.log('Error deleting playlist:', error)
+    return c.json({ error: 'Failed to delete playlist' }, 500)
+  }
+})
+
+Deno.serve(app.fetch)

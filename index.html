@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23030213'%3E%3Cpath d='M8 5v14l11-7z'/%3E%3C/svg%3E" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta name="description" content="Replay - A reactive progressive web app for musicians to listen to their Dropbox audio tracks with smart features" />
+    <meta name="theme-color" content="#030213" />
+    <meta name="color-scheme" content="light dark" />
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- iOS PWA Support -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Replay" />
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white' style='background: %23030213; border-radius: 4px; padding: 4px;'%3E%3Cpath d='M8 5v14l11-7z'/%3E%3C/svg%3E" />
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Replay - Personal Music Player" />
+    <meta property="og:description" content="A reactive progressive web app for musicians to listen to their Dropbox audio tracks with smart features" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='630' viewBox='0 0 1200 630' fill='%23030213'%3E%3Crect width='1200' height='630' fill='%23030213'/%3E%3Cpath d='M500 200l200 115-200 115z' fill='white'/%3E%3Ctext x='400' y='500' font-family='Arial' font-size='48' font-weight='bold' fill='white'%3EReplay%3C/text%3E%3C/svg%3E" />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Replay - Personal Music Player" />
+    <meta name="twitter:description" content="A reactive progressive web app for musicians to listen to their Dropbox audio tracks" />
+    
+    <!-- Additional Meta Tags -->
+    <meta name="application-name" content="Replay" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="msapplication-TileColor" content="#030213" />
+    <meta name="msapplication-navbutton-color" content="#030213" />
+    <meta name="msapplication-starturl" content="/" />
+    
+    <!-- Preconnect to important domains -->
+    <link rel="preconnect" href="https://supabase.co" />
+    <link rel="preconnect" href="https://dropbox.com" />
+    
+    <title>Replay - Your Personal Audio Collection</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('Replay SW registered: ', registration);
+              
+              // Check for updates
+              registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    // New update available
+                    if (confirm('A new version of Replay is available. Reload to update?')) {
+                      window.location.reload();
+                    }
+                  }
+                });
+              });
+            })
+            .catch((registrationError) => {
+              console.log('Replay SW registration failed: ', registrationError);
+            });
+        });
+      }
+      
+      // Handle PWA install prompt
+      let deferredPrompt;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        console.log('Replay install prompt ready');
+        e.preventDefault();
+        deferredPrompt = e;
+      });
+      
+      // Track app usage
+      if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
+        console.log('Replay background sync supported');
+      }
+      
+      // Handle offline/online status
+      function updateOnlineStatus() {
+        const status = navigator.onLine ? 'online' : 'offline';
+        console.log('Replay connection status:', status);
+        document.body.setAttribute('data-connection', status);
+      }
+      
+      window.addEventListener('online', updateOnlineStatus);
+      window.addEventListener('offline', updateOnlineStatus);
+      updateOnlineStatus();
+    </script>
+  </body>
+</html>
