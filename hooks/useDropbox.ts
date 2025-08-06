@@ -1,12 +1,13 @@
 import { useStore } from '../store'
 import { toast } from 'sonner'
+import { Track } from '../data/tracks'
 
 const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID
 const publicAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 const functionName = import.meta.env.VITE_SUPABASE_FUNCTION_NAME
 
 export function useDropbox() {
-  const { setAllTracks, setAppState, setIsLoading, setError, setIsDemoMode } = useStore()
+  const { setAllTracks, setAppState, setIsLoading, setError, setIsDemoMode, updateTrack } = useStore()
 
   const checkDropboxConnection = async () => {
     setIsLoading(true)
@@ -22,7 +23,16 @@ export function useDropbox() {
       
       if (response.ok) {
         const data = await response.json()
-        setAllTracks(data.files)
+        // Initialize tracks with minimal info
+        const initialTracks = data.files.map((file: any) => ({
+          ...file,
+          artist: 'Loading...',
+          album: '',
+          title: file.name,
+          duration: 0,
+          isMetadataLoading: true,
+        }))
+        setAllTracks(initialTracks)
         setAppState('connected')
         setIsDemoMode(false)
         localStorage.removeItem('replay-demo-mode')
@@ -42,5 +52,31 @@ export function useDropbox() {
     }
   }
 
-  return { checkDropboxConnection }
+  const fetchTrackMetadata = async (track: Track, index: number) => {
+    if (!track.path_lower || !track.isMetadataLoading) return
+
+    try {
+      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/${functionName}/dropbox/metadata`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${publicAnonKey}`,
+        },
+        body: JSON.stringify({ path_lower: track.path_lower }),
+      })
+
+      if (response.ok) {
+        const { metadata } = await response.json()
+        updateTrack(index, { ...metadata, isMetadataLoading: false })
+      } else {
+        // Handle error case, maybe set track to an error state
+        updateTrack(index, { isMetadataLoading: false, artist: 'Error loading metadata' })
+      }
+    } catch (error) {
+      console.error('Error fetching metadata:', error)
+      updateTrack(index, { isMetadataLoading: false, artist: 'Error loading metadata' })
+    }
+  }
+
+  return { checkDropboxConnection, fetchTrackMetadata }
 }

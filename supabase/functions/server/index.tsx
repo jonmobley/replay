@@ -27,7 +27,7 @@ function getFileExtension(filename: string): string {
   return filename.split('.').pop()?.toLowerCase() || ''
 }
 
-// Fetch audio files from Dropbox
+// Fetch audio file list from Dropbox
 app.get(`/${functionName}/dropbox/files`, async (c) => {
   try {
     const accessToken = Deno.env.get('DROPBOX_ACCESS_TOKEN')
@@ -45,9 +45,8 @@ app.get(`/${functionName}/dropbox/files`, async (c) => {
       body: JSON.stringify({
         path: '',
         recursive: true,
-        include_media_info: true,
+        include_media_info: false,
         include_deleted: false,
-        include_has_explicit_shared_members: false,
       }),
     })
 
@@ -59,7 +58,7 @@ app.get(`/${functionName}/dropbox/files`, async (c) => {
 
     const data = await response.json()
     
-    // Filter for audio files
+    // Filter for audio files and return a minimal representation
     const audioFiles = data.entries
       .filter((file: any) => 
         file['.tag'] === 'file' && 
@@ -69,51 +68,61 @@ app.get(`/${functionName}/dropbox/files`, async (c) => {
          file.name.toLowerCase().endsWith('.ogg') ||
          file.name.toLowerCase().endsWith('.flac'))
       )
+      .map((file: any) => ({
+        id: file.id,
+        name: file.name,
+        path_lower: file.path_lower,
+      }))
 
-    // Process files to add metadata
-    const processedFiles = await Promise.all(audioFiles.map(async (file: any) => {
-      try {
-        const tempLinkResponse = await fetch('https://api.dropboxapi.com/2/files/get_temporary_link', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ path: file.path_lower }),
-        })
-
-        if (!tempLinkResponse.ok) {
-          return null
-        }
-
-        const tempLinkData = await tempLinkResponse.json()
-        const audioUrl = tempLinkData.link
-
-        const metadata = await mm.fetchFromUrl(audioUrl)
-        
-        return {
-          id: file.id,
-          name: file.name,
-          path_lower: file.path_lower,
-          size: file.size,
-          fileType: getFileExtension(file.name),
-          artist: metadata.common.artist || 'Unknown Artist',
-          album: metadata.common.album || 'Unknown Album',
-          title: metadata.common.title || file.name.replace(/\.[^/.]+$/, ''),
-          duration: metadata.format.duration ? Math.round(metadata.format.duration) : null,
-          client_modified: file.client_modified,
-          server_modified: file.server_modified
-        }
-      } catch (e) {
-        console.error(`Failed to process metadata for ${file.name}:`, e)
-        return null // Skip files that fail metadata parsing
-      }
-    }))
-
-    return c.json({ files: processedFiles.filter(Boolean) })
+    return c.json({ files: audioFiles })
   } catch (error) {
     console.log('Error fetching Dropbox files:', error)
     return c.json({ error: 'Internal server error while fetching files' }, 500)
+  }
+})
+
+// Fetch metadata for a single audio file
+app.post(`/${functionName}/dropbox/metadata`, async (c) => {
+  try {
+    const { path_lower } = await c.req.json()
+    const accessToken = Deno.env.get('DROPBOX_ACCESS_TOKEN')
+
+    if (!accessToken) {
+      return c.json({ error: 'Dropbox access token not configured' }, 500)
+    }
+    
+    // Get temporary link for the file
+    const tempLinkResponse = await fetch('https://api.dropboxapi.com/2/files/get_temporary_link', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ path: path_lower }),
+    })
+
+    if (!tempLinkResponse.ok) {
+      throw new Error('Failed to get temporary link for metadata parsing.')
+    }
+
+    const tempLinkData = await tempLinkResponse.json()
+    const audioUrl = tempLinkData.link
+    
+    // Parse metadata from the URL
+    const metadata = await mm.fetchFromUrl(audioUrl)
+    
+    const fileInfo = {
+      fileType: getFileExtension(path_lower),
+      artist: metadata.common.artist || 'Unknown Artist',
+      album: metadata.common.album || 'Unknown Album',
+      title: metadata.common.title || path_lower.split('/').pop().replace(/\.[^/.]+$/, ''),
+      duration: metadata.format.duration ? Math.round(metadata.format.duration) : null,
+    }
+
+    return c.json({ metadata: fileInfo })
+  } catch (error) {
+    console.error(`Failed to process metadata for ${path_lower}:`, error)
+    return c.json({ error: 'Failed to fetch or parse metadata' }, 500)
   }
 })
 

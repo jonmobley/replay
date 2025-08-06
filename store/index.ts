@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import { DEMO_TRACKS, Track } from '../data/tracks'
-import { projectId, publicAnonKey } from '../utils/supabase/info'
 
 type AppState = 'checking' | 'disconnected' | 'connected' | 'demo'
 
@@ -9,6 +8,7 @@ interface AppStore {
   setAppState: (appState: AppState) => void
   allTracks: Track[]
   setAllTracks: (tracks: Track[]) => void
+  updateTrack: (index: number, newTrackData: Partial<Track>) => void
   isLoading: boolean
   setIsLoading: (isLoading: boolean) => void
   error: string | null
@@ -23,7 +23,6 @@ interface AppStore {
   setSearchQuery: (searchQuery: string) => void
   enterDemoMode: () => void
   exitDemoMode: () => void
-
 }
 
 export const useStore = create<AppStore>((set) => ({
@@ -31,6 +30,12 @@ export const useStore = create<AppStore>((set) => ({
   setAppState: (appState) => set({ appState }),
   allTracks: [],
   setAllTracks: (tracks) => set({ allTracks: tracks }),
+  updateTrack: (index, newTrackData) =>
+    set((state) => {
+      const newTracks = [...state.allTracks]
+      newTracks[index] = { ...newTracks[index], ...newTrackData }
+      return { allTracks: newTracks }
+    }),
   isLoading: false,
   setIsLoading: (isLoading) => set({ isLoading }),
   error: null,
@@ -74,5 +79,4 @@ export const useStore = create<AppStore>((set) => ({
     // Don't call checkDropboxConnection directly to avoid circular dependency
     // The app will handle connection checking in the useEffect
   },
-
 }))
