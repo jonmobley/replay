@@ -1,0 +1,43 @@
+import { useStore } from '../store'
+import { projectId, publicAnonKey } from '../utils/supabase/info'
+import { toast } from 'sonner'
+
+export function useDropbox() {
+  const { setAllTracks, setAppState, setIsLoading, setError, setIsDemoMode } = useStore()
+
+  const checkDropboxConnection = async () => {
+    setIsLoading(true)
+    setError(null)
+    toast.loading('Connecting to Dropbox...')
+    
+    try {
+      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-a401fe33/dropbox/files`, {
+        headers: {
+          'Authorization': `Bearer ${publicAnonKey}`,
+        },
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setAllTracks(data.files)
+        setAppState('connected')
+        setIsDemoMode(false)
+        localStorage.removeItem('replay-demo-mode')
+        toast.success('Connected to Dropbox')
+      } else {
+        const errorData = await response.json()
+        setError(errorData.error || 'Failed to connect to Dropbox')
+        setAppState('disconnected')
+        toast.error('Failed to connect to Dropbox')
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Connection failed')
+      setAppState('disconnected')
+      toast.error('Connection failed')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return { checkDropboxConnection }
+}

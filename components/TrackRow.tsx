@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu'
-import { motion } from 'motion/react'
+import { motion } from 'framer-motion'
 
 interface Track {
   id: string

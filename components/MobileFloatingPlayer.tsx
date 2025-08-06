@@ -1,7 +1,7 @@
 import React from 'react'
 import { Play, Pause, SkipForward, ChevronUp } from 'lucide-react'
 import { Button } from './ui/button'
-import { motion, AnimatePresence } from 'motion/react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface Track {
   id: string

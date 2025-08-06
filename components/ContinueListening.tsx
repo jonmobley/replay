@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Play, Clock } from 'lucide-react'
 import { Card, CardContent } from './ui/card'
 import { Progress } from './ui/progress'
-import { motion } from 'motion/react'
+import { motion } from 'framer-motion'
 
 interface Track {
   id: string

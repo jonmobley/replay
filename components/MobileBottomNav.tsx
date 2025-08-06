@@ -3,13 +3,14 @@ import { Home, Library, Music } from 'lucide-react'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 
+import { useStore } from '../store'
+
 interface MobileBottomNavProps {
-  currentView: string
-  onViewChange: (view: string) => void
   trackCount: number
 }
 
-export function MobileBottomNav({ currentView, onViewChange, trackCount }: MobileBottomNavProps) {
+export function MobileBottomNav({ trackCount }: MobileBottomNavProps) {
+  const { currentView, setCurrentView } = useStore()
   const navItems = [
     {
       id: 'home',
@@ -46,7 +47,7 @@ export function MobileBottomNav({ currentView, onViewChange, trackCount }: Mobil
                 <Button
                   key={item.id}
                   variant="ghost"
-                  onClick={() => onViewChange(item.id)}
+                  onClick={() => setCurrentView(item.id)}
                   className={`
                     flex flex-col items-center justify-center
                     h-12 px-3 py-1.5

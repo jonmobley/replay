@@ -3,7 +3,7 @@ import { Heart, Play, Clock, TrendingUp } from 'lucide-react'
 import { Button } from './ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Badge } from './ui/badge'
-import { motion } from 'motion/react'
+import { motion } from 'framer-motion'
 
 interface Track {
   id: string

@@ -2,7 +2,7 @@ import React from 'react'
 import { Play, Pause, SkipBack, SkipForward, Volume2, Heart, Maximize2, Shuffle, Repeat, Repeat1 } from 'lucide-react'
 import { Button } from './ui/button'
 import { Slider } from './ui/slider'
-import { motion, AnimatePresence } from 'motion/react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 interface Track {
   id: string

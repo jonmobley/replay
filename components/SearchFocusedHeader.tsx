@@ -3,19 +3,18 @@ import { Search, Settings } from 'lucide-react'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 
+import { useStore } from '../store'
+
 interface SearchFocusedHeaderProps {
-  searchQuery: string
-  onSearchChange: (query: string) => void
   onSettingsClick: () => void
   isMobile: boolean
 }
 
 export function SearchFocusedHeader({
-  searchQuery,
-  onSearchChange,
   onSettingsClick,
   isMobile
 }: SearchFocusedHeaderProps) {
+  const { searchQuery, setSearchQuery } = useStore()
   return (
     <header className="bg-card/50 backdrop-blur-sm border-b border-border">
       <div className="px-4 md:px-6 py-3 md:py-4">
@@ -26,14 +25,14 @@ export function SearchFocusedHeader({
             <Input
               placeholder={isMobile ? "Search music..." : "Search songs, artists, albums, playlists..."}
               value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 bg-muted/50 border-0 focus:bg-background focus:ring-2 focus:ring-primary/20 transition-all text-base md:text-sm"
             />
             {searchQuery && (
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onSearchChange('')}
+                onClick={() => setSearchQuery('')}
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 opacity-60 hover:opacity-100"
               >
                 ×

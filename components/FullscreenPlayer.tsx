@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 import { Button } from './ui/button'
 import { Slider } from './ui/slider'
-import { motion, AnimatePresence } from 'motion/react'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   DropdownMenu,
   DropdownMenuContent,

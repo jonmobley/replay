@@ -3,14 +3,14 @@ import { Home, Library, Clock, Heart, Music, Play, Sparkles } from 'lucide-react
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 
+import { useStore } from '../store'
+
 interface SidebarProps {
-  currentView: string
-  onViewChange: (view: string) => void
-  isDemoMode: boolean
   trackCount: number
 }
 
-export function Sidebar({ currentView, onViewChange, isDemoMode, trackCount }: SidebarProps) {
+export function Sidebar({ trackCount }: SidebarProps) {
+  const { currentView, setCurrentView, isDemoMode } = useStore()
   const mainNavItems = [
     {
       id: 'home',
@@ -77,7 +77,7 @@ export function Sidebar({ currentView, onViewChange, isDemoMode, trackCount }: S
                   <Button
                     key={item.id}
                     variant={isActive ? "secondary" : "ghost"}
-                    onClick={() => onViewChange(item.id)}
+                    onClick={() => setCurrentView(item.id)}
                     className={`w-full justify-start text-sidebar-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent ${
                       isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''
                     }`}
@@ -109,7 +109,7 @@ export function Sidebar({ currentView, onViewChange, isDemoMode, trackCount }: S
                   <Button
                     key={item.id}
                     variant={isActive ? "secondary" : "ghost"}
-                    onClick={() => onViewChange(item.id)}
+                    onClick={() => setCurrentView(item.id)}
                     className={`w-full justify-start text-sidebar-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent ${
                       isActive ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''
                     }`}
