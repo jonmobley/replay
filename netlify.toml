@@ -1,0 +1,14 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  VITE_SUPABASE_PROJECT_ID = "${VITE_SUPABASE_PROJECT_ID}"
+  VITE_SUPABASE_ANON_KEY = "${VITE_SUPABASE_ANON_KEY}"
+  VITE_SUPABASE_FUNCTION_NAME = "${VITE_SUPABASE_FUNCTION_NAME}"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+

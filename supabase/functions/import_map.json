@@ -1,0 +1,10 @@
+{
+  "imports": {
+    "hono": "npm:hono",
+    "cors": "npm:hono/cors",
+    "logger": "npm:hono/logger",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js",
+    "music-metadata-browser": "npm:music-metadata-browser"
+  }
+}
+

@@ -2,6 +2,7 @@ import { Hono } from 'npm:hono'
 import { cors } from 'npm:hono/cors'
 import { logger } from 'npm:hono/logger'
 import { createClient } from 'npm:@supabase/supabase-js'
+import * as mm from 'npm:music-metadata-browser'
 import * as kv from './kv_store.tsx'
 
 const app = new Hono()
@@ -19,40 +20,7 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 )
 
-// Helper function to extract metadata from filename
-function extractMetadataFromFilename(filename: string) {
-  // Remove file extension
-  const nameWithoutExt = filename.replace(/\.[^/.]+$/, '')
-  
-  // Common patterns for music files:
-  // "Artist - Track.mp3"
-  // "Artist - Album - Track.mp3"
-  // "Track.mp3"
-  // "01 - Track.mp3"
-  // "01. Track.mp3"
-  
-  let artist = 'Unknown Artist'
-  let album = 'Unknown Album'
-  let title = nameWithoutExt
-  
-  // Pattern: "Artist - Track" or "Artist - Album - Track"
-  if (nameWithoutExt.includes(' - ')) {
-    const parts = nameWithoutExt.split(' - ')
-    if (parts.length === 2) {
-      artist = parts[0].trim()
-      title = parts[1].trim()
-    } else if (parts.length === 3) {
-      artist = parts[0].trim()
-      album = parts[1].trim()
-      title = parts[2].trim()
-    }
-  }
-  
-  // Remove track numbers from title
-  title = title.replace(/^\d+\.?\s*/, '')
-  
-  return { artist, album, title }
-}
+const functionName = Deno.env.get('SUPABASE_FUNCTION_NAME') || 'make-server-a401fe33'
 
 // Helper function to get file extension
 function getFileExtension(filename: string): string {
@@ -60,7 +28,7 @@ function getFileExtension(filename: string): string {
 }
 
 // Fetch audio files from Dropbox
-app.get('/make-server-a401fe33/dropbox/files', async (c) => {
+app.get(`/${functionName}/dropbox/files`, async (c) => {
   try {
     const accessToken = Deno.env.get('DROPBOX_ACCESS_TOKEN')
     if (!accessToken) {
@@ -91,7 +59,7 @@ app.get('/make-server-a401fe33/dropbox/files', async (c) => {
 
     const data = await response.json()
     
-    // Filter for audio files and extract metadata
+    // Filter for audio files
     const audioFiles = data.entries
       .filter((file: any) => 
         file['.tag'] === 'file' && 
@@ -101,35 +69,48 @@ app.get('/make-server-a401fe33/dropbox/files', async (c) => {
          file.name.toLowerCase().endsWith('.ogg') ||
          file.name.toLowerCase().endsWith('.flac'))
       )
-      .map((file: any) => {
-        const metadata = extractMetadataFromFilename(file.name)
-        const fileType = getFileExtension(file.name)
-        
-        // Try to get duration from media_info if available
-        let duration = null
-        if (file.media_info && file.media_info.metadata) {
-          const mediaMetadata = file.media_info.metadata
-          if (mediaMetadata.duration) {
-            duration = Math.round(mediaMetadata.duration / 1000) // Convert ms to seconds
-          }
+
+    // Process files to add metadata
+    const processedFiles = await Promise.all(audioFiles.map(async (file: any) => {
+      try {
+        const tempLinkResponse = await fetch('https://api.dropboxapi.com/2/files/get_temporary_link', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ path: file.path_lower }),
+        })
+
+        if (!tempLinkResponse.ok) {
+          return null
         }
+
+        const tempLinkData = await tempLinkResponse.json()
+        const audioUrl = tempLinkData.link
+
+        const metadata = await mm.fetchFromUrl(audioUrl)
         
         return {
           id: file.id,
           name: file.name,
           path_lower: file.path_lower,
           size: file.size,
-          fileType,
-          artist: metadata.artist,
-          album: metadata.album,
-          title: metadata.title,
-          duration,
+          fileType: getFileExtension(file.name),
+          artist: metadata.common.artist || 'Unknown Artist',
+          album: metadata.common.album || 'Unknown Album',
+          title: metadata.common.title || file.name.replace(/\.[^/.]+$/, ''),
+          duration: metadata.format.duration ? Math.round(metadata.format.duration) : null,
           client_modified: file.client_modified,
           server_modified: file.server_modified
         }
-      })
+      } catch (e) {
+        console.error(`Failed to process metadata for ${file.name}:`, e)
+        return null // Skip files that fail metadata parsing
+      }
+    }))
 
-    return c.json({ files: audioFiles })
+    return c.json({ files: processedFiles.filter(Boolean) })
   } catch (error) {
     console.log('Error fetching Dropbox files:', error)
     return c.json({ error: 'Internal server error while fetching files' }, 500)
@@ -137,7 +118,7 @@ app.get('/make-server-a401fe33/dropbox/files', async (c) => {
 })
 
 // Get temporary link for audio file
-app.post('/make-server-a401fe33/dropbox/temp-link', async (c) => {
+app.post(`/${functionName}/dropbox/temp-link`, async (c) => {
   try {
     const { path } = await c.req.json()
     const accessToken = Deno.env.get('DROPBOX_ACCESS_TOKEN')
@@ -171,7 +152,7 @@ app.post('/make-server-a401fe33/dropbox/temp-link', async (c) => {
 })
 
 // Recently played tracks
-app.get('/make-server-a401fe33/recently-played', async (c) => {
+app.get(`/${functionName}/recently-played`, async (c) => {
   try {
     const recentlyPlayed = await kv.get('recently_played') || []
     // Sort by last played time (most recent first)
@@ -185,7 +166,7 @@ app.get('/make-server-a401fe33/recently-played', async (c) => {
   }
 })
 
-app.post('/make-server-a401fe33/recently-played', async (c) => {
+app.post(`/${functionName}/recently-played`, async (c) => {
   try {
     const { track } = await c.req.json()
     const recentlyPlayed = await kv.get('recently_played') || []
@@ -226,7 +207,7 @@ app.post('/make-server-a401fe33/recently-played', async (c) => {
   }
 })
 
-app.delete('/make-server-a401fe33/recently-played', async (c) => {
+app.delete(`/${functionName}/recently-played`, async (c) => {
   try {
     await kv.set('recently_played', [])
     return c.json({ success: true })
@@ -237,7 +218,7 @@ app.delete('/make-server-a401fe33/recently-played', async (c) => {
 })
 
 // Save/get playlists
-app.get('/make-server-a401fe33/playlists', async (c) => {
+app.get(`/${functionName}/playlists`, async (c) => {
   try {
     const playlists = await kv.get('playlists') || []
     return c.json({ playlists })
@@ -247,7 +228,7 @@ app.get('/make-server-a401fe33/playlists', async (c) => {
   }
 })
 
-app.post('/make-server-a401fe33/playlists', async (c) => {
+app.post(`/${functionName}/playlists`, async (c) => {
   try {
     const { name, tracks } = await c.req.json()
     const playlists = await kv.get('playlists') || []
@@ -269,7 +250,7 @@ app.post('/make-server-a401fe33/playlists', async (c) => {
   }
 })
 
-app.delete('/make-server-a401fe33/playlists/:id', async (c) => {
+app.delete(`/${functionName}/playlists/:id`, async (c) => {
   try {
     const id = c.req.param('id')
     const playlists = await kv.get('playlists') || []

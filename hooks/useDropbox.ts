@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 
 const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID
 const publicAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const functionName = import.meta.env.VITE_SUPABASE_FUNCTION_NAME
 
 export function useDropbox() {
   const { setAllTracks, setAppState, setIsLoading, setError, setIsDemoMode } = useStore()
@@ -13,7 +14,7 @@ export function useDropbox() {
     toast.loading('Connecting to Dropbox...')
     
     try {
-      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-a401fe33/dropbox/files`, {
+      const response = await fetch(`https://${projectId}.supabase.co/functions/v1/${functionName}/dropbox/files`, {
         headers: {
           'Authorization': `Bearer ${publicAnonKey}`,
         },
