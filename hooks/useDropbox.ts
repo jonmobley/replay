@@ -1,6 +1,8 @@
 import { useStore } from '../store'
-import { projectId, publicAnonKey } from '../utils/supabase/info'
 import { toast } from 'sonner'
+
+const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID
+const publicAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 export function useDropbox() {
   const { setAllTracks, setAppState, setIsLoading, setError, setIsDemoMode } = useStore()
