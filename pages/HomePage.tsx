@@ -4,6 +4,7 @@ import { useAudioPlayer } from '../hooks/useAudioPlayer'
 import { useIsMobile } from '../components/ui/use-mobile'
 import { Button } from '../components/ui/button'
 import { RecentlyPlayed } from '../components/RecentlyPlayed'
+import { formatRelativeTime } from '../utils/time'
 import { Music, Play } from 'lucide-react'
 
 export function HomePage() {
@@ -14,8 +15,6 @@ export function HomePage() {
   const handleTrackPlay = (trackIndex: number) => {
     actions.playTrack(allTracks, trackIndex)
   }
-
-  import { formatRelativeTime } from '../utils/time'
 
   return (
     <div className="space-y-6">

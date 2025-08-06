@@ -166,12 +166,42 @@ export function useAudioPlayer() {
   const loadTrack = useCallback(async (track: Track) => {
     if (!audioRef.current) return
 
-    // For demo mode, we'll simulate loading with a placeholder audio file
-    // In real implementation, this would load from Dropbox
-    const audioUrl = `/demo-audio/${track.id}.mp3` // This would be the actual Dropbox URL
-    
-    audioRef.current.src = audioUrl
-    setCurrentTrack(track)
+    try {
+      setState(prev => ({ ...prev, isLoading: true, error: null }))
+      
+      // For demo mode, use placeholder audio
+      if (track.id.startsWith('demo-')) {
+        const audioUrl = `/demo-audio/${track.id}.mp3`
+        audioRef.current.src = audioUrl
+      } else {
+        // For real Dropbox files, get temporary link
+        const { projectId, publicAnonKey } = await import('../utils/supabase/info')
+        const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-a401fe33/dropbox/temp-link`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${publicAnonKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ path: track.path_lower })
+        })
+        
+        if (!response.ok) {
+          throw new Error('Failed to get temporary link for audio file')
+        }
+        
+        const data = await response.json()
+        audioRef.current.src = data.link
+      }
+      
+      setCurrentTrack(track)
+    } catch (error) {
+      setState(prev => ({ 
+        ...prev, 
+        isLoading: false, 
+        error: error instanceof Error ? error.message : 'Failed to load track'
+      }))
+      return
+    }
     
     // Update Media Session API
     if ('mediaSession' in navigator) {
