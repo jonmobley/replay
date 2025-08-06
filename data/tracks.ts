@@ -10,6 +10,7 @@ export interface Track {
   duration?: number | null
   client_modified?: string
   server_modified?: string
+  isMetadataLoading?: boolean
 }
 
 // Sample demo tracks with simulated durations
