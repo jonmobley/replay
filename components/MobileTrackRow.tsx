@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Play, Pause, MoreHorizontal, Heart, Plus, Download, DownloadCloud, CheckCircle } from 'lucide-react'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
@@ -12,20 +12,8 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu'
 import { motion } from 'framer-motion'
-
-interface Track {
-  id: string
-  name: string
-  path_lower: string
-  size: number
-  fileType: string
-  artist: string
-  album: string
-  title: string
-  duration?: number | null
-  client_modified?: string
-  server_modified?: string
-}
+import { useDropbox } from '../hooks/useDropbox'
+import { Track } from '../data/tracks'
 
 interface MobileTrackRowProps {
   track: Track
@@ -42,6 +30,11 @@ export function MobileTrackRow({ track, index, isPlaying, isCurrentTrack, onPlay
     isTrackDownloaded, 
     downloadProgress 
   } = useOfflineStorage()
+  const { fetchTrackMetadata } = useDropbox()
+
+  useEffect(() => {
+    fetchTrackMetadata(track, index)
+  }, [track.id])
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
