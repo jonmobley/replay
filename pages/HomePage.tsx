@@ -1,37 +1,38 @@
 import React from 'react'
 import { useStore } from '../store'
-import { useAudioPlayer } from '../hooks/useAudioPlayer'
+import { useAudioStore } from '../store/audio'
 import { useIsMobile } from '../components/ui/use-mobile'
 import { Button } from '../components/ui/button'
 import { RecentlyPlayed } from '../components/RecentlyPlayed'
 import { formatRelativeTime } from '../utils/time'
 import { Music, Play } from 'lucide-react'
+import { QuickFavorites } from '../components/QuickFavorites'
 
-export function HomePage() {
-  const { allTracks, currentView, setCurrentView } = useStore()
-  const { currentTrackIndex, actions } = useAudioPlayer()
+export default function HomePage() {
+  const { allTracks, setCurrentView } = useStore()
+  const { currentTrackIndex, playTrack } = useAudioStore()
   const isMobile = useIsMobile()
 
   const handleTrackPlay = (trackIndex: number) => {
-    actions.playTrack(allTracks, trackIndex)
+    playTrack(allTracks, trackIndex)
   }
 
   return (
     <div className="space-y-6">
-      {/* Welcome Header */}
       <div>
         <h1 className={`font-bold mb-2 ${isMobile ? 'text-2xl' : 'text-3xl'}`}>
           Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 18 ? 'afternoon' : 'evening'}
         </h1>
         <p className="text-muted-foreground">
-          {allTracks.length > 0 
-            ? "Ready to discover your music?" 
+          {allTracks.length > 0
+            ? "Ready to discover your music?"
             : "Your music library is ready to explore"
           }
         </p>
       </div>
 
-      {/* Recently Added */}
+      <QuickFavorites onTrackPlay={handleTrackPlay} />
+
       {allTracks.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
@@ -46,7 +47,7 @@ export function HomePage() {
                 return bDate.getTime() - aDate.getTime()
               })
               .slice(0, 4)
-              .map((track, index) => {
+              .map((track) => {
                 const trackIndex = allTracks.findIndex(t => t.id === track.id)
                 const isCurrentTrack = trackIndex === currentTrackIndex
                 const modifiedDate = new Date(track.client_modified || track.server_modified || 0)
@@ -120,13 +121,12 @@ export function HomePage() {
         </div>
       )}
 
-      {/* Recently Played */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className={`font-semibold ${isMobile ? 'text-lg' : 'text-xl'}`}>Recently Played</h2>
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setCurrentView('recent')}
             className="text-muted-foreground hover:text-foreground text-xs"
           >
@@ -134,12 +134,7 @@ export function HomePage() {
           </Button>
         </div>
         <RecentlyPlayed
-          allTracks={allTracks}
-          currentTrackIndex={currentTrackIndex}
           onTrackSelect={handleTrackPlay}
-          onLoadAsPlaylist={() => {}}
-          compact={true}
-          isDemoMode={useStore.getState().isDemoMode}
         />
       </div>
     </div>

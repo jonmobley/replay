@@ -1,19 +1,23 @@
 import React, { useState, useEffect } from 'react'
-import { Play, Pause, MoreHorizontal, Heart, Plus, Download, DownloadCloud, CheckCircle } from 'lucide-react'
+import { Play, Pause, MoreHorizontal, Heart, Plus, Download, DownloadCloud, CheckCircle, Trash2 } from 'lucide-react'
 import { Button } from './ui/button'
-import { Badge } from './ui/badge'
 import { Progress } from './ui/progress'
-import { useOfflineStorage } from '../hooks/useOfflineStorage'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuPortal,
 } from './ui/dropdown-menu'
 import { motion } from 'framer-motion'
 import { useDropbox } from '../hooks/useDropbox'
 import { Track } from '../data/tracks'
+import { useTrackActions } from '../hooks/useTrackActions'
+import { formatTime } from '../utils/track-utils'
 
 interface MobileTrackRowProps {
   track: Track
@@ -21,42 +25,32 @@ interface MobileTrackRowProps {
   isPlaying: boolean
   isCurrentTrack: boolean
   onPlay: () => void
+  playlistId?: string
 }
 
-export function MobileTrackRow({ track, index, isPlaying, isCurrentTrack, onPlay }: MobileTrackRowProps) {
-  const { 
-    downloadTrack, 
-    removeOfflineTrack, 
-    isTrackDownloaded, 
-    downloadProgress 
-  } = useOfflineStorage()
+export function MobileTrackRow({
+  track,
+  index,
+  isPlaying,
+  isCurrentTrack,
+  onPlay,
+  playlistId,
+}: MobileTrackRowProps) {
   const { fetchTrackMetadata } = useDropbox()
+  const {
+    isFavorite,
+    isDownloaded,
+    progress,
+    playlists,
+    toggleFavorite,
+    addTrackToPlaylist,
+    removeTrackFromPlaylist,
+    handleDownload,
+  } = useTrackActions(track, playlistId)
 
   useEffect(() => {
     fetchTrackMetadata(track, index)
   }, [track.id])
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = Math.floor(seconds % 60)
-    return `${mins}:${secs.toString().padStart(2, '0')}`
-  }
-
-  const isDownloaded = isTrackDownloaded(track.id)
-  const progress = downloadProgress[track.id]
-
-  const handleDownload = async (e: React.MouseEvent) => {
-    e.stopPropagation()
-    try {
-      if (isDownloaded) {
-        await removeOfflineTrack(track.id)
-      } else {
-        await downloadTrack(track)
-      }
-    } catch (error) {
-      console.error('Download operation failed:', error)
-    }
-  }
 
   return (
     <motion.div
@@ -88,9 +82,11 @@ export function MobileTrackRow({ track, index, isPlaying, isCurrentTrack, onPlay
       {/* Track Info */}
       <div className="flex-1 min-w-0 mr-3">
         <div className="flex items-center space-x-2 mb-1">
-          <h4 className={`font-medium truncate text-sm ${
-            isCurrentTrack ? 'text-primary' : ''
-          }`}>
+          <h4
+            className={`font-medium truncate text-sm ${
+              isCurrentTrack ? 'text-primary' : ''
+            }`}
+          >
             {track.title}
           </h4>
           {isDownloaded && (
@@ -98,7 +94,9 @@ export function MobileTrackRow({ track, index, isPlaying, isCurrentTrack, onPlay
           )}
         </div>
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground truncate">{track.artist}</p>
+          <p className="text-xs text-muted-foreground truncate">
+            {track.artist}
+          </p>
           <div className="flex items-center space-x-2 text-xs text-muted-foreground flex-shrink-0">
             <span>{formatTime(track.duration || 0)}</span>
           </div>
@@ -147,16 +145,52 @@ export function MobileTrackRow({ track, index, isPlaying, isCurrentTrack, onPlay
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => toggleFavorite(track.id)}>
               <Heart className="h-4 w-4 mr-2" />
-              Add to Favorites
+              {isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Plus className="h-4 w-4 mr-2" />
-              Add to Playlist
-            </DropdownMenuItem>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <Plus className="h-4 w-4 mr-2" />
+                Add to Playlist
+              </DropdownMenuSubTrigger>
+              <DropdownMenuPortal>
+                <DropdownMenuSubContent>
+                  {playlists.map((playlist) => {
+                    const isTrackInPlaylist = playlist.trackIds.includes(
+                      track.id,
+                    )
+                    return (
+                      <DropdownMenuItem
+                        key={playlist.id}
+                        onClick={() => {
+                          if (isTrackInPlaylist) {
+                            removeTrackFromPlaylist(playlist.id, track.id)
+                          } else {
+                            addTrackToPlaylist(playlist.id, track.id)
+                          }
+                        }}
+                      >
+                        {playlist.name}
+                      </DropdownMenuItem>
+                    )
+                  })}
+                </DropdownMenuSubContent>
+              </DropdownMenuPortal>
+            </DropdownMenuSub>
+            {playlistId && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => removeTrackFromPlaylist(playlistId, track.id)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Remove from Playlist
+                </DropdownMenuItem>
+              </>
+            )}
             <DropdownMenuSeparator />
-            <DropdownMenuItem 
+            <DropdownMenuItem
               onClick={(e) => {
                 e.stopPropagation()
                 handleDownload(e)
@@ -180,3 +214,5 @@ export function MobileTrackRow({ track, index, isPlaying, isCurrentTrack, onPlay
     </motion.div>
   )
 }
+
+

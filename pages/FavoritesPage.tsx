@@ -1,22 +1,32 @@
 import React from 'react'
-import { useIsMobile } from '../components/ui/use-mobile'
+import { useStore } from '../store'
+import { TrackList } from '../components/TrackList'
+import { Track } from '../data/tracks'
 import { Heart } from 'lucide-react'
 
-export function FavoritesPage() {
-  const isMobile = useIsMobile()
+export default function FavoritesPage() {
+  const { allTracks, favoriteTrackIds } = useStore()
+
+  const favoriteTracks = allTracks.filter((track: Track) =>
+    favoriteTrackIds.includes(track.id),
+  )
+
+  if (favoriteTracks.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <Heart className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+        <h2 className="text-xl font-semibold">No favorites yet</h2>
+        <p className="text-gray-500">
+          Click the heart icon on any track to add it to your favorites.
+        </p>
+      </div>
+    )
+  }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className={`font-bold ${isMobile ? 'text-2xl' : 'text-3xl'}`}>Favorites</h1>
-        <p className="text-muted-foreground">Your favorite tracks</p>
-      </div>
-      {/* Favorites content would go here */}
-      <div className="text-center py-12">
-        <Heart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-        <h3 className="text-lg font-medium mb-2">No favorites yet</h3>
-        <p className="text-muted-foreground">Start adding tracks to your favorites to see them here</p>
-      </div>
+    <div>
+      <h1 className="text-2xl font-bold">Favorites</h1>
+      <TrackList tracks={favoriteTracks} />
     </div>
   )
 }

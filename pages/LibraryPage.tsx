@@ -1,20 +1,28 @@
 import React from 'react'
 import { useStore } from '../store'
-import { useAudioPlayer } from '../hooks/useAudioPlayer'
+import { useAudioStore } from '../store/audio'
 import { useIsMobile } from '../components/ui/use-mobile'
 import { Button } from '../components/ui/button'
 import { MobileTrackRow } from '../components/MobileTrackRow'
 import { TrackRow } from '../components/TrackRow'
 import { Plus } from 'lucide-react'
 
-export function LibraryPage() {
-  const { allTracks, filteredTracks, originalIndices } = useStore()
-  const { currentTrackIndex, state, actions } = useAudioPlayer()
+export default function LibraryPage() {
+  const { allTracks } = useStore(state => ({ allTracks: state.allTracks }))
+  const { playTrack, currentTrack, isPlaying } = useAudioStore()
   const isMobile = useIsMobile()
 
   const handleTrackPlay = (trackIndex: number) => {
-    actions.playTrack(allTracks, trackIndex)
+    playTrack(allTracks, trackIndex)
   }
+
+  // A simple search filter (can be expanded)
+  const filteredTracks = allTracks.filter(track => 
+    useStore.getState().searchQuery ? 
+    track.title.toLowerCase().includes(useStore.getState().searchQuery.toLowerCase()) ||
+    track.artist.toLowerCase().includes(useStore.getState().searchQuery.toLowerCase()) :
+    true
+  )
 
   return (
     <div className="space-y-6">
@@ -31,30 +39,28 @@ export function LibraryPage() {
         )}
       </div>
 
-      {/* Track List */}
       <div className={isMobile ? 'space-y-0' : 'space-y-1'}>
-        {filteredTracks.map((track, index) => 
-          isMobile ? (
+        {filteredTracks.map((track, index) => {
+          const originalIndex = allTracks.findIndex(t => t.id === track.id)
+          return isMobile ? (
             <MobileTrackRow
               key={track.id}
               track={track}
-              index={index}
-              isPlaying={state.isPlaying && currentTrackIndex === originalIndices[index]}
-              isCurrentTrack={currentTrackIndex === originalIndices[index]}
-              onPlay={() => handleTrackPlay(originalIndices[index])}
+              isPlaying={isPlaying && currentTrack?.id === track.id}
+              isCurrentTrack={currentTrack?.id === track.id}
+              onPlay={() => handleTrackPlay(originalIndex)}
             />
           ) : (
             <TrackRow
               key={track.id}
               track={track}
-              track={track}
               index={index}
-              isPlaying={state.isPlaying && currentTrackIndex === originalIndices[index]}
-              isCurrentTrack={currentTrackIndex === originalIndices[index]}
-              onPlay={() => handleTrackPlay(originalIndices[index])}
+              isPlaying={isPlaying && currentTrack?.id === track.id}
+              isCurrentTrack={currentTrack?.id === track.id}
+              onPlay={() => handleTrackPlay(originalIndex)}
             />
           )
-        )}
+        })}
       </div>
     </div>
   )

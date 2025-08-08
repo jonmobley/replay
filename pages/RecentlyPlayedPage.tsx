@@ -1,16 +1,16 @@
 import React from 'react'
 import { useStore } from '../store'
-import { useAudioPlayer } from '../hooks/useAudioPlayer'
+import { useAudioStore } from '../store/audio'
 import { useIsMobile } from '../components/ui/use-mobile'
 import { RecentlyPlayed } from '../components/RecentlyPlayed'
 
-export function RecentlyPlayedPage() {
-  const { allTracks, isDemoMode } = useStore()
-  const { currentTrackIndex, actions } = useAudioPlayer()
+export default function RecentlyPlayedPage() {
+  const { allTracks } = useStore()
+  const { playTrack } = useAudioStore()
   const isMobile = useIsMobile()
 
   const handleTrackPlay = (trackIndex: number) => {
-    actions.playTrack(allTracks, trackIndex)
+    playTrack(allTracks, trackIndex)
   }
 
   return (
@@ -20,11 +20,7 @@ export function RecentlyPlayedPage() {
         <p className="text-muted-foreground">Your listening history</p>
       </div>
       <RecentlyPlayed
-        allTracks={allTracks}
-        currentTrackIndex={currentTrackIndex}
         onTrackSelect={handleTrackPlay}
-        onLoadAsPlaylist={() => {}}
-        isDemoMode={isDemoMode}
       />
     </div>
   )

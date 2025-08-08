@@ -1,40 +1,58 @@
 import React from 'react'
 import { useStore } from '../store'
-import { useAudioPlayer } from '../hooks/useAudioPlayer'
+import { useAudioStore } from '../store/audio'
 import { useIsMobile } from '../components/ui/use-mobile'
 import { MobileTrackRow } from '../components/MobileTrackRow'
+import { TrackRow } from '../components/TrackRow'
 
-export function SearchPage() {
-  const { allTracks, filteredTracks, originalIndices, searchQuery } = useStore()
-  const { currentTrackIndex, state, actions } = useAudioPlayer()
+export default function SearchPage() {
+  const { allTracks, searchQuery } = useStore()
+  const { currentTrack, isPlaying, playTrack } = useAudioStore()
   const isMobile = useIsMobile()
 
   const handleTrackPlay = (trackIndex: number) => {
-    actions.playTrack(allTracks, trackIndex)
+    playTrack(allTracks, trackIndex)
   }
+
+  const filteredTracks = allTracks.filter(track => 
+    searchQuery ? 
+    track.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    track.artist.toLowerCase().includes(searchQuery.toLowerCase()) :
+    true
+  )
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className={`font-bold ${isMobile ? 'text-2xl' : 'text-3xl'}`}>Search</h1>
-        <p className="text-muted-foreground">Find your favorite tracks</p>
+        <h1 className={`font-bold ${isMobile ? 'text-2xl' : 'text-3xl'}`}>Search Results</h1>
+        <p className="text-muted-foreground">
+          {filteredTracks.length} tracks found for "{searchQuery}"
+        </p>
       </div>
       
-      {/* Mobile Search Results */}
-      {isMobile && searchQuery && (
-        <div className="space-y-0">
-          {filteredTracks.map((track, index) => (
+      <div className={isMobile ? 'space-y-0' : 'space-y-1'}>
+        {filteredTracks.map((track, index) => {
+          const originalIndex = allTracks.findIndex(t => t.id === track.id)
+          return isMobile ? (
             <MobileTrackRow
               key={track.id}
               track={track}
-              index={index}
-              isPlaying={state.isPlaying && currentTrackIndex === originalIndices[index]}
-              isCurrentTrack={currentTrackIndex === originalIndices[index]}
-              onPlay={() => handleTrackPlay(originalIndices[index])}
+              isPlaying={isPlaying && currentTrack?.id === track.id}
+              isCurrentTrack={currentTrack?.id === track.id}
+              onPlay={() => handleTrackPlay(originalIndex)}
             />
-          ))}
-        </div>
-      )}
+          ) : (
+            <TrackRow
+              key={track.id}
+              track={track}
+              index={index}
+              isPlaying={isPlaying && currentTrack?.id === track.id}
+              isCurrentTrack={currentTrack?.id === track.id}
+              onPlay={() => handleTrackPlay(originalIndex)}
+            />
+          )
+        })}
+      </div>
     </div>
   )
 }
