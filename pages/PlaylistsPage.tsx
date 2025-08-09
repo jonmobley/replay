@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useStore } from '../store'
 import { TrackList } from '../components/TrackList'
 import { PlaylistManager } from '../components/PlaylistManager'
@@ -22,10 +22,11 @@ export default function PlaylistsPage() {
     (playlist) => playlist.id === selectedPlaylistId,
   )
 
-  const tracks =
-    selectedPlaylist?.trackIds
+  const tracks = useMemo(() => {
+    return selectedPlaylist?.trackIds
       .map((trackId) => allTracks.find((track) => track.id === trackId))
       .filter((track) => track !== undefined) || []
+  }, [selectedPlaylist, allTracks])
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

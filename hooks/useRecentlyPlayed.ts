@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useStore } from '../store'
 import { Track } from '../data/tracks'
-import { projectId, publicAnonKey } from '../utils/supabase/info'
+import { projectId, publicAnonKey, functionName } from '../utils/supabase/info'
 
 export interface RecentlyPlayedItem {
   track: Track
@@ -23,8 +23,8 @@ export const useRecentlyPlayed = () => {
   const fetchRecentlyPlayed = useCallback(async () => {
     setIsLoading(true)
     try {
+      const localData = localStorage.getItem('replay-recently-played')
       if (isDemoMode) {
-        const localData = localStorage.getItem('replay-recently-played')
         if (localData) {
           const parsed = JSON.parse(localData)
           const converted = parsed.map((item: any) => {
@@ -42,19 +42,19 @@ export const useRecentlyPlayed = () => {
           setRecentlyPlayed(converted)
         }
       } else {
-        const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-a401fe33/recently-played`, {
+        const response = await fetch(`https://${projectId}.supabase.co/functions/v1/${functionName}/recently-played`, {
           headers: { 'Authorization': `Bearer ${publicAnonKey}` },
         })
         if (response.ok) {
           const data = await response.json()
           setRecentlyPlayed(data.recentlyPlayed)
+          localStorage.setItem('replay-recently-played', JSON.stringify(data.recentlyPlayed))
         } else {
-          const localData = localStorage.getItem('replay-recently-played-fallback')
           if (localData) setRecentlyPlayed(JSON.parse(localData))
         }
       }
     } catch (error) {
-      const localData = localStorage.getItem('replay-recently-played-fallback')
+      const localData = localStorage.getItem('replay-recently-played')
       if (localData) setRecentlyPlayed(JSON.parse(localData))
     } finally {
       setIsLoading(false)
@@ -67,19 +67,17 @@ export const useRecentlyPlayed = () => {
 
   const clearHistory = useCallback(async () => {
     try {
-      if (isDemoMode) {
-        localStorage.removeItem('replay-recently-played')
-        setRecentlyPlayed([])
-      } else {
-        await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-a401fe33/recently-played`, {
+      localStorage.removeItem('replay-recently-played')
+      if (!isDemoMode) {
+        await fetch(`https://${projectId}.supabase.co/functions/v1/${functionName}/recently-played`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${publicAnonKey}` },
         })
-        localStorage.removeItem('replay-recently-played-fallback')
-        setRecentlyPlayed([])
       }
+      setRecentlyPlayed([])
     } catch (error) {
       console.warn('Error clearing recently played:', error)
+      // Optionally, restore local data if remote clear fails
     }
   }, [isDemoMode])
 
@@ -119,4 +117,5 @@ export const useRecentlyPlayed = () => {
     filteredAndSortedItems,
   }
 }
+
 

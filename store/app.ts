@@ -36,3 +36,4 @@ export const useAppStore = create<AppStore>((set) => ({
   setSearchQuery: (searchQuery) => set({ searchQuery }),
 }))
 
+

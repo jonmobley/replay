@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { useStore } from '../store'
 import { useAudioStore } from '../store/audio'
 import { useIsMobile } from '../components/ui/use-mobile'
@@ -8,7 +8,7 @@ import { TrackRow } from '../components/TrackRow'
 import { Plus } from 'lucide-react'
 
 export default function LibraryPage() {
-  const { allTracks } = useStore(state => ({ allTracks: state.allTracks }))
+  const { allTracks, searchQuery } = useStore(state => ({ allTracks: state.allTracks, searchQuery: state.searchQuery }))
   const { playTrack, currentTrack, isPlaying } = useAudioStore()
   const isMobile = useIsMobile()
 
@@ -16,13 +16,16 @@ export default function LibraryPage() {
     playTrack(allTracks, trackIndex)
   }
 
-  // A simple search filter (can be expanded)
-  const filteredTracks = allTracks.filter(track => 
-    useStore.getState().searchQuery ? 
-    track.title.toLowerCase().includes(useStore.getState().searchQuery.toLowerCase()) ||
-    track.artist.toLowerCase().includes(useStore.getState().searchQuery.toLowerCase()) :
-    true
-  )
+  const filteredTracks = useMemo(() => {
+    if (!searchQuery) {
+      return allTracks
+    }
+    const lowercasedQuery = searchQuery.toLowerCase()
+    return allTracks.filter(track => 
+      track.title.toLowerCase().includes(lowercasedQuery) ||
+      track.artist.toLowerCase().includes(lowercasedQuery)
+    )
+  }, [allTracks, searchQuery])
 
   return (
     <div className="space-y-6">

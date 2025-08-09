@@ -15,10 +15,10 @@ export default function SearchPage() {
   }
 
   const filteredTracks = allTracks.filter(track => 
-    searchQuery ? 
+    searchQuery ?
     track.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     track.artist.toLowerCase().includes(searchQuery.toLowerCase()) :
-    true
+    false
   )
 
   return (

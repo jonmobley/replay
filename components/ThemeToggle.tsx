@@ -10,6 +10,17 @@ import {
 
 type Theme = 'light' | 'dark' | 'system'
 
+const applyTheme = (newTheme: Theme) => {
+  const root = document.documentElement
+  
+  if (newTheme === 'system') {
+    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+    root.classList.toggle('dark', systemTheme === 'dark')
+  } else {
+    root.classList.toggle('dark', newTheme === 'dark')
+  }
+}
+
 export function ThemeToggle() {
   const [theme, setTheme] = useState<Theme>('system')
 
@@ -22,25 +33,15 @@ export function ThemeToggle() {
     // Listen for system theme changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     const handleChange = () => {
-      if (theme === 'system') {
+      // Only apply system theme if the current theme is 'system'
+      if (localStorage.getItem('replay-theme') === 'system') {
         applyTheme('system')
       }
     }
 
     mediaQuery.addEventListener('change', handleChange)
     return () => mediaQuery.removeEventListener('change', handleChange)
-  }, [theme])
-
-  const applyTheme = (newTheme: Theme) => {
-    const root = document.documentElement
-    
-    if (newTheme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-      root.classList.toggle('dark', systemTheme === 'dark')
-    } else {
-      root.classList.toggle('dark', newTheme === 'dark')
-    }
-  }
+  }, [])
 
   const changeTheme = (newTheme: Theme) => {
     setTheme(newTheme)

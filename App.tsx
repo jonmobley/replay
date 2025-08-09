@@ -54,7 +54,7 @@ export default function App() {
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
       window.removeEventListener('online', handleOnline)
-      window.removeEventListener('offline', 'handleOffline')
+      window.removeEventListener('offline', handleOffline)
     }
   }, [enterDemoMode, checkDropboxConnection, setIsOnline])
 

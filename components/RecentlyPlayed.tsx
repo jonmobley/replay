@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Clock, Play, RotateCcw, Trash2, TrendingUp } from 'lucide-react'
 import { Button } from './ui/button'
 import { Card, CardContent } from './ui/card'
@@ -27,7 +27,15 @@ export function RecentlyPlayed({ onTrackSelect, compact = false }: RecentlyPlaye
     filteredAndSortedItems,
   } = useRecentlyPlayed()
 
-  const findTrackIndex = (trackId: string) => allTracks.findIndex(t => t.id === trackId)
+  const trackIndexMap = useMemo(() => {
+    const map = new Map<string, number>()
+    allTracks.forEach((track, index) => {
+      map.set(track.id, index)
+    })
+    return map
+  }, [allTracks])
+
+  const findTrackIndex = (trackId: string) => trackIndexMap.get(trackId) ?? -1
 
   if (isLoading) {
     return <div>Loading...</div>

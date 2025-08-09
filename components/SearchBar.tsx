@@ -1,10 +1,11 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Search, X, Filter } from 'lucide-react'
 import { Input } from './ui/input'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 import { Checkbox } from './ui/checkbox'
+import { useDebounce } from '../hooks/useDebounce'
 
 interface SearchBarProps {
   searchQuery: string
@@ -26,10 +27,16 @@ export function SearchBar({
   resultCount, 
   totalCount 
 }: SearchBarProps) {
+  const [searchTerm, setSearchTerm] = useState(searchQuery)
+  const debouncedSearchTerm = useDebounce(searchTerm, 300)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
 
+  useEffect(() => {
+    onSearchChange(debouncedSearchTerm)
+  }, [debouncedSearchTerm, onSearchChange])
+
   const clearSearch = () => {
-    onSearchChange('')
+    setSearchTerm('')
   }
 
   const toggleFileType = (fileType: string) => {
@@ -44,7 +51,7 @@ export function SearchBar({
   }
 
   const hasActiveFilters = filters.selectedTypes.length > 0
-  const hasActiveSearch = searchQuery.length > 0
+  const hasActiveSearch = searchTerm.length > 0
 
   return (
     <div className="space-y-3">
@@ -53,8 +60,8 @@ export function SearchBar({
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search tracks, artists, albums..."
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
           className="pl-10 pr-20"
         />
         {hasActiveSearch && (

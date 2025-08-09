@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { useStore } from '../store'
 import { TrackList } from '../components/TrackList'
 import { Track } from '../data/tracks'
@@ -7,9 +7,11 @@ import { Heart } from 'lucide-react'
 export default function FavoritesPage() {
   const { allTracks, favoriteTrackIds } = useStore()
 
-  const favoriteTracks = allTracks.filter((track: Track) =>
-    favoriteTrackIds.includes(track.id),
-  )
+  const favoriteTracks = useMemo(() => {
+    return allTracks.filter((track: Track) =>
+      favoriteTrackIds.includes(track.id),
+    )
+  }, [allTracks, favoriteTrackIds])
 
   if (favoriteTracks.length === 0) {
     return (

@@ -110,18 +110,6 @@ export function MobileFloatingPlayer({
                 >
                   <SkipForward className="h-5 w-5" />
                 </Button>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onExpand()
-                  }}
-                  className="h-10 w-10 p-0 rounded-full"
-                >
-                  <ChevronUp className="h-5 w-5" />
-                </Button>
               </div>
             </div>
           </motion.div>

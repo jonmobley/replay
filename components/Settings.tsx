@@ -198,17 +198,17 @@ export function Settings({ isDemoMode, onExitDemo, trackCount, isOnline }: Setti
             <CardTitle className="text-lg">Help & Support</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Button variant="ghost" className="w-full justify-start">
+            <Button variant="ghost" className="w-full justify-start" onClick={() => { /* TODO: Implement keyboard shortcuts modal */ }}>
               <HelpCircle className="h-4 w-4 mr-3" />
               Keyboard Shortcuts
             </Button>
             
-            <Button variant="ghost" className="w-full justify-start">
+            <Button variant="ghost" className="w-full justify-start" onClick={() => { /* TODO: Link to documentation */ }}>
               <ExternalLink className="h-4 w-4 mr-3" />
               Documentation
             </Button>
             
-            <Button variant="ghost" className="w-full justify-start">
+            <Button variant="ghost" className="w-full justify-start" onClick={() => { /* TODO: Link to issue tracker */ }}>
               <ExternalLink className="h-4 w-4 mr-3" />
               Report an Issue
             </Button>
@@ -223,11 +223,13 @@ export function Settings({ isDemoMode, onExitDemo, trackCount, isOnline }: Setti
           <CardContent className="space-y-2">
             <div className="flex justify-between items-center">
               <span className="text-sm">Version</span>
+              {/* TODO: Dynamically get version from package.json */}
               <Badge variant="outline">1.0.0</Badge>
             </div>
             
             <div className="flex justify-between items-center">
               <span className="text-sm">Build</span>
+              {/* TODO: Dynamically get build date/number */}
               <Badge variant="outline">2024.01</Badge>
             </div>
             

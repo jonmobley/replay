@@ -50,7 +50,7 @@ export function MobileTrackRow({
 
   useEffect(() => {
     fetchTrackMetadata(track, index)
-  }, [track.id])
+  }, [track.id, index])
 
   return (
     <motion.div

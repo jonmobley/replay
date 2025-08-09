@@ -85,7 +85,7 @@ export const useAudioController = () => {
     if (audio && Math.abs(audio.currentTime - currentTime) > 1) {
       audio.currentTime = currentTime
     }
-  }, [currentTime])
+  }, [])
 
   // Media Session API integration
   useEffect(() => {
@@ -137,4 +137,5 @@ export const useAudioController = () => {
     return () => window.removeEventListener('keydown', handleKeydown)
   }, [togglePlay, handleNext, handlePrevious, seek, currentTime])
 }
+
 

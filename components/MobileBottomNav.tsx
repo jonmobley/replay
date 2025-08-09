@@ -1,5 +1,5 @@
 import React from 'react'
-import { Home, Library, Music } from 'lucide-react'
+import { Home, Library, Music, Heart } from 'lucide-react'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 
@@ -10,7 +10,7 @@ interface MobileBottomNavProps {
 }
 
 export function MobileBottomNav({ trackCount }: MobileBottomNavProps) {
-  const { currentView, setCurrentView } = useStore()
+  const { currentView, setCurrentView, favoriteTrackIds } = useStore()
   const navItems = [
     {
       id: 'home',
@@ -22,7 +22,13 @@ export function MobileBottomNav({ trackCount }: MobileBottomNavProps) {
       id: 'tracks',
       label: 'Library',
       icon: Library,
-      count: null
+      count: trackCount
+    },
+    {
+      id: 'favorites',
+      label: 'Favorites',
+      icon: Heart,
+      count: favoriteTrackIds.length
     },
     {
       id: 'playlists',
@@ -38,7 +44,7 @@ export function MobileBottomNav({ trackCount }: MobileBottomNavProps) {
       <div className="bg-card/95 backdrop-blur-xl border-t border-border/50">
         {/* Apple HIG: Safe area padding and proper spacing */}
         <div className="px-2 pt-2 pb-safe">
-          <div className="grid grid-cols-3 gap-1">
+          <div className="grid grid-cols-4 gap-1">
             {navItems.map((item) => {
               const Icon = item.icon
               const isActive = currentView === item.id
