@@ -9,4 +9,19 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      external: [
+        "@radix-ui/react-slot",
+        "class-variance-authority",
+        "@radix-ui/react-dialog",
+        "lucide-react",
+        "@radix-ui/react-separator",
+        "@radix-ui/react-slider",
+        "@radix-ui/react-dropdown-menu",
+        "@radix-ui/react-progress",
+        "@radix-ui/react-select",
+      ],
+    },
+  },
 })
